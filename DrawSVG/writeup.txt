@@ -1,15 +1,17 @@
-AndrewID: ??????
+AndrewID: yuchenca
 
 Task 1:
-
+    Notice that glColor4f() requires value of color from 0 to 1, unlike the software_renderer one with 0 to 255.
     Fully implemented.
 
 Task 2:
-
+    Note that when |(y1-y0)/(x1-x0)| is larger than 1, it is not easy to calculate the approximate points of y+e as x+1,
+    it's better to make step long y, and to calculate x+e, which means inverse the ratio.
     Fully implemented.
 
 Task 3:
-
+    If we first draw the lines of triangle, we don't need to consider the situation of Barycentric Algorithm,
+     where ratio of cross product equals 0 and sum of ratio of cross product is 1.
     Fully implemented.
 
 Task 4:

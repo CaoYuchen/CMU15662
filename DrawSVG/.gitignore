@@ -1,6 +1,11 @@
 # Build directory
 build/
+build_dbg/
+build_rel/
 
 # Useless files
 .DS_STORE
 *.swp
+
+# handin zip
+handin.tgz

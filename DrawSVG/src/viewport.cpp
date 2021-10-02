@@ -13,6 +13,15 @@ void ViewportImp::set_viewbox( float centerX, float centerY, float vspan ) {
   this->centerY = centerY;
   this->vspan = vspan; 
 
+  Matrix3x3 translationMatrix = Matrix3x3::identity();
+  translationMatrix(0,2)=vspan - centerX;
+  translationMatrix(1,2)=vspan - centerY;
+
+  Matrix3x3 scaleMatrix = Matrix3x3::identity();
+  scaleMatrix(0,0)= 1/(2*vspan);
+  scaleMatrix(1,1)= 1/(2*vspan);
+
+  set_svg_2_norm(scaleMatrix * translationMatrix);
 }
 
 void ViewportImp::update_viewbox( float dx, float dy, float scale ) { 
