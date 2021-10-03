@@ -59,8 +59,8 @@ void SoftwareRendererImp::set_render_target( unsigned char* render_target,
   this->render_target = render_target;
   this->target_w = width;
   this->target_h = height;
-  this->sample_w = width* this->sample_rate;
-  this->sample_h = height * this->sample_rate;
+  this->sample_w = target_w * this->sample_rate;
+  this->sample_h = target_h * this->sample_rate;
   this->sample_buffer.resize(4 * this->sample_w * this->sample_h);
 }
 
@@ -243,28 +243,28 @@ void SoftwareRendererImp::rasterize_point( float x, float y, Color color ) {
   if ( sy < 0 || sy >= target_h ) return;
 
   // fill sample - NOT doing alpha blending!
-  render_target[4 * (sx + sy * target_w)    ] = (uint8_t) (color.r * 255);
-  render_target[4 * (sx + sy * target_w) + 1] = (uint8_t) (color.g * 255);
-  render_target[4 * (sx + sy * target_w) + 2] = (uint8_t) (color.b * 255);
-  render_target[4 * (sx + sy * target_w) + 3] = (uint8_t) (color.a * 255);
+  // render_target[4 * (sx + sy * target_w)    ] = (uint8_t) (color.r * 255);
+  // render_target[4 * (sx + sy * target_w) + 1] = (uint8_t) (color.g * 255);
+  // render_target[4 * (sx + sy * target_w) + 2] = (uint8_t) (color.b * 255);
+  // render_target[4 * (sx + sy * target_w) + 3] = (uint8_t) (color.a * 255);
 
-  //task 8
-  //Simple alpha compositing - premultipled method
-  // float Er = color.r, Eg = color.g, Eb = color.b, Ea = color.a;
-  // float Cr = (float)(render_target[4 * (sx + sy * target_w)    ]/255);
-  // float Cg = (float)(render_target[4 * (sx + sy * target_w)  +1]/255);
-  // float Cb = (float)(render_target[4 * (sx + sy * target_w)  +2]/255);
-  // float Ca = (float)(render_target[4 * (sx + sy * target_w)  +3]/255);
 
-  // float Ca_new = 1 - (1 - Ea) * (1 - Ca);
-  // float Cr_new = (1 - Ea) * Cr + Er;
-  // float Cg_new = (1 - Ea) * Cg + Eg;
-  // float Cb_new = (1 - Ea) * Cb + Eb;
+  sx *= sample_rate;
+  sy *= sample_rate;
 
-  // render_target[4 * (sx + sy * target_w)    ] = (uint8_t) (Cr_new * 255);
-  // render_target[4 * (sx + sy * target_w) + 1] = (uint8_t) (Cg_new * 255);
-  // render_target[4 * (sx + sy * target_w) + 2] = (uint8_t) (Cb_new * 255);
-  // render_target[4 * (sx + sy * target_w) + 3] = (uint8_t) (Ca_new * 255);
+  for (int i = sx; i < sx + sample_rate; ++i)
+  {
+    for (int j = sy; j < sy + sample_rate; ++j)
+    {
+      size_t pxy = 4 * (i + j * sample_w);
+      sample_buffer[pxy] = (uint8_t)(color.r * 255);
+      sample_buffer[pxy + 1] = (uint8_t)(color.g * 255);
+      sample_buffer[pxy + 2] = (uint8_t)(color.b * 255);
+      sample_buffer[pxy + 3] = (uint8_t)(color.a * 255);
+    }
+  }
+
+  fill_sample(sx,sy,color);
 
 }
 
@@ -274,7 +274,10 @@ void SoftwareRendererImp::rasterize_line( float x0, float y0,
 
   // Task 2: 
   // Implement line rasterization
-
+  x0 *= sample_rate;
+  x1 *= sample_rate;
+  y0 *= sample_rate;
+  y1 *= sample_rate;
   // The Bresenham Line-Drawing Algorithm
   float m = (y1 - y0) / (x1 - x0);
   float e = 0;
@@ -355,7 +358,12 @@ void SoftwareRendererImp::rasterize_triangle( float x0, float y0,
                                               Color color ) {
   // Task 3: 
   // Implement triangle rasterization 
-  
+  x0 *= sample_rate;
+  y0 *= sample_rate;
+  x1 *= sample_rate;
+  y1 *= sample_rate;
+  x2 *= sample_rate;
+  y2 *= sample_rate;
   // draw edges
   rasterize_line(x0, y0, x1, y1, color);
   rasterize_line(x1, y1, x2, y2, color);
@@ -392,7 +400,26 @@ void SoftwareRendererImp::rasterize_image( float x0, float y0,
                                            Texture& tex ) {
   // Task 6: 
   // Implement image rasterization
+  x0 *= sample_rate;
+  x1 *= sample_rate;
+  y0 *= sample_rate;
+  y1 *= sample_rate;
+  Sampler2D* sampler = this->sampler;
 
+  float u_step = 1 / (x1 - x0);
+  float v_step = 1 / (y1 - y0);
+  Color c;
+  for(float x = x0; x < x1; x++) {
+    for(float y = y0; y < y1; y++) {
+      float u = (x - x0) / (y1 - y0);
+      float v = (y - y0) / (y1 - y0);
+
+      // c = sampler->sample_nearest(tex, u, v, 0);
+      c = sampler->sample_bilinear(tex, u, v, 0);
+      // c = sampler->sample_trilinear(tex, u, v, u_step, v_step);
+      rasterize_point(x, y, c);
+    }
+  }
 }
 
 // resolve samples to render target
@@ -431,69 +458,36 @@ void SoftwareRendererImp::resolve( void ) {
       render_target[4 * (sx + sy * target_w) + 3] = (uint8_t)(a);
     }
   }
-  // int x, y;
-  // int xbuf, ybuf;
-  // int xsample, ysample;
-  // int xidx, yidx;
-  // float sum_r, sum_g, sum_b, sum_a;
-  // for(x = 0; x < this->sample_w; x += sample_rate) {
-  //   for(y = 0; y < this->sample_h; y += sample_rate) {
-  //     sum_r = 0;
-  //     sum_g = 0;
-  //     sum_b = 0;
-  //     sum_a = 0;
-  //     for(xbuf = 0; xbuf < sample_rate; xbuf++) {
-  //       for(ybuf = 0; ybuf < sample_rate; ybuf++) {
-  //         xsample = x + xbuf;
-  //         ysample = y + ybuf;
-  //         sum_r += sample_buffer[4 * (xsample + (ysample * target_w))    ];
-  //         sum_g += sample_buffer[4 * (xsample + (ysample * target_w)) + 1];
-  //         sum_b += sample_buffer[4 * (xsample + (ysample * target_w)) + 2];
-  //         sum_a += sample_buffer[4 * (xsample + (ysample * target_w)) + 3];
-  //       }
-  //     }
-  //     xidx = floor(x / sample_rate);
-  //     yidx = floor(y / sample_rate);
-  //     render_target[4 * (xidx + yidx * target_w)    ] = sum_r / pow(sample_rate, 2);
-  //     render_target[4 * (xidx + yidx * target_w) + 1] = sum_g / pow(sample_rate, 2);
-  //     render_target[4 * (xidx + yidx * target_w) + 2] = sum_b / pow(sample_rate, 2);
-  //     render_target[4 * (xidx + yidx * target_w) + 3] = sum_a / pow(sample_rate, 2);
-  //   }
-  // }
+
   return;
 
 }
 
-// void SoftwareRendererImp::fill_sample(int x, int y, const Color &c)
-// {
-//   // check bounds
-//   if (x < 0 || x >= this->sample_w)
-//     return;
-//   if (x < 0 || y >= this->sample_h)
-//     return;
+void SoftwareRendererImp::fill_sample(int sx, int sy, const Color &color)
+{
+  // check bounds
+  if (sx < 0 || sx >= this->sample_w)
+    return;
+  if (sy < 0 || sy >= this->sample_h)
+    return;
 
-//   // fill sample
-//   size_t pos = 4 * (x + y * sample_w);
+  // task 8
+  // Simple alpha compositing - premultipled method
+  float Er = color.r, Eg = color.g, Eb = color.b, Ea = color.a;
+  float Cr = sample_buffer[4 * (sx + sy * sample_w)    ]/255.0f;
+  float Cg = sample_buffer[4 * (sx + sy * sample_w)  +1]/255.0f;
+  float Cb = sample_buffer[4 * (sx + sy * sample_w)  +2]/255.0f;
+  float Ca = sample_buffer[4 * (sx + sy * sample_w)  +3]/255.0f;
 
-//   Color from = c;
+  float Ca_new = 1.0f - (1.0f - Ea) * (1.0f - Ca);
+  float Cr_new = (1.0f - Ea) * Cr + Er;
+  float Cg_new = (1.0f - Ea) * Cg + Eg;
+  float Cb_new = (1.0f - Ea) * Cb + Eb;
 
-//   Color scr;
-//   scr.r = sample_buffer[pos] / 255.0f;
-//   scr.g = sample_buffer[pos + 1] / 255.0f;
-//   scr.b = sample_buffer[pos + 2] / 255.0f;
-//   scr.a = sample_buffer[pos + 3] / 255.0f;
-
-//   Color to;
-//   to.r = (1.0f - from.a) * scr.r + from.r * from.a;
-//   to.g = (1.0f - from.a) * scr.g + from.g * from.a;
-//   to.b = (1.0f - from.a) * scr.b + from.b * from.a;
-//   to.a = 1.0f - (1.0f - from.a) * (1.0f - scr.a);
-
-//   sample_buffer[pos] = (uint8_t)(to.r * 255);
-//   sample_buffer[pos + 1] = (uint8_t)(to.g * 255);
-//   sample_buffer[pos + 2] = (uint8_t)(to.b * 255);
-//   sample_buffer[pos + 3] = (uint8_t)(to.a * 255);
-// }
-
+  sample_buffer[4 * (sx + sy * sample_w)    ] = (uint8_t) (Cr_new * 255);
+  sample_buffer[4 * (sx + sy * sample_w) + 1] = (uint8_t) (Cg_new * 255);
+  sample_buffer[4 * (sx + sy * sample_w) + 2] = (uint8_t) (Cb_new * 255);
+  sample_buffer[4 * (sx + sy * sample_w) + 3] = (uint8_t) (Ca_new * 255);
+}
 
 } // namespace CMU462

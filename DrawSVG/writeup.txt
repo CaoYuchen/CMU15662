@@ -15,15 +15,16 @@ Task 3:
     Fully implemented.
 
 Task 4:
-
-    Fully implemented.
+    I spent lots of time there, and I didn't finish this part before checkpoint, because I wasn't careful enough about the superpixel's
+    scale is enlarged in everyway, we need also add those scale change to rasterize triangle and line and point. In the end, I'm not 
+    quite sure if I implement it correctly or not.
 
 Task 5:
-
+    This task is quite straight forward... And if we look at hardware_renderer in the same place, it's basically explaining everything.
     Fully implemented.
 
 Task 6:
-
+    
     Fully implemented.
 
 Task 7:
@@ -31,8 +32,8 @@ Task 7:
     Fully implemented.
 
 Task 8:
-
-    Fully implemented.
+    I think I implemented the correct math formula, but it seems my result doesn't really work. I think the problem is that
+    I don't know how to sort depth among multiple alpha color. But the svg doesn't have depth information....
 
 Extra credit:
 
