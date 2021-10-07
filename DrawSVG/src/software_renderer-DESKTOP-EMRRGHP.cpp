@@ -360,9 +360,9 @@ void SoftwareRendererImp::rasterize_triangle( float x0, float y0,
   // Task 3: 
   // Implement triangle rasterization 
   // draw edges
-  // rasterize_line(x0, y0, x1, y1, color);
-  // rasterize_line(x1, y1, x2, y2, color);
-  // rasterize_line(x2, y2, x0, y0, color);
+  rasterize_line(x0, y0, x1, y1, color);
+  rasterize_line(x1, y1, x2, y2, color);
+  rasterize_line(x2, y2, x0, y0, color);
 
   x0 *= sample_rate;
   y0 *= sample_rate;
@@ -373,14 +373,15 @@ void SoftwareRendererImp::rasterize_triangle( float x0, float y0,
 
   // The Barycentric Algorithm
   // fill the triangle
-  float xMin = floor(min(x0,min(x1,x2)))+0.5f;
-  float yMin = floor(min(y0,min(y1,y2)))+0.5f;
-  float xHigh = ceil(max(x0,max(x1,x2)));
-  float yHigh = ceil(max(y0,max(y1,y2)));
+  float xMin = min(x0,min(x1,x2));
+  float yMin = min(y0,min(y1,y2));
+  float xHigh = max(x0,max(x1,x2));
+  float yHigh = max(y0,max(y1,y2));
 
   float x, y;
-  for(x = xMin; x < xHigh; x += 1) {
-    for(y = yMin; y < yHigh; y += 1) {
+  for(x = xMin; x < xHigh; x += 0.5) {
+    for(y = yMin; y < yHigh; y += 0.5) {
+
       float area_half1=(x1-x0)*(y-y0)-(y1-y0)*(x-x0);
       float area_half2=(x-x0)*(y2-y0)-(y-y0)*(x2-x0);
       float area_whole=(x1-x0)*(y2-y0)-(y1-y0)*(x2-x0);
@@ -393,6 +394,7 @@ void SoftwareRendererImp::rasterize_triangle( float x0, float y0,
       }
     }
   }
+
 }
 
 void SoftwareRendererImp::rasterize_image( float x0, float y0,
@@ -476,17 +478,16 @@ void SoftwareRendererImp::fill_sample(float x, float y, const Color &color)
   // task 8
   // Simple alpha compositing - premultipled method
   float Er = color.r, Eg = color.g, Eb = color.b, Ea = color.a;
-
-  float Cr = sample_buffer[4 * (sx + sy * sample_w)    ]/255.0f;
-  float Cg = sample_buffer[4 * (sx + sy * sample_w)  +1]/255.0f;
-  float Cb = sample_buffer[4 * (sx + sy * sample_w)  +2]/255.0f;
-  float Ca = sample_buffer[4 * (sx + sy * sample_w)  +3]/255.0f;
+  float Cr = sample_buffer[4 * (sx + sy * sample_w)    ];
+  float Cg = sample_buffer[4 * (sx + sy * sample_w)  +1];
+  float Cb = sample_buffer[4 * (sx + sy * sample_w)  +2];
+  float Ca = sample_buffer[4 * (sx + sy * sample_w)  +3];
 
   if(Cr == 1 && Cg == 1 && Cb == 1 && Ca ==1){
-    sample_buffer[4 * (sx + sy * sample_w)    ] = (uint8_t) (Er * 255);
-    sample_buffer[4 * (sx + sy * sample_w) + 1] = (uint8_t) (Eg * 255);
-    sample_buffer[4 * (sx + sy * sample_w) + 2] = (uint8_t) (Eb * 255);
-    sample_buffer[4 * (sx + sy * sample_w) + 3] = (uint8_t) (Ea * 255);
+    sample_buffer[4 * (sx + sy * sample_w)    ] = (uint8_t) (Ea * Er);
+    sample_buffer[4 * (sx + sy * sample_w) + 1] = (uint8_t) (Ea * Eg);
+    sample_buffer[4 * (sx + sy * sample_w) + 2] = (uint8_t) (Ea * Eb);
+    sample_buffer[4 * (sx + sy * sample_w) + 3] = (uint8_t) (Ea);
   }
   else{
     float Ca_new = 1.0f - (1.0f - Ea) * (1.0f - Ca);
@@ -494,11 +495,10 @@ void SoftwareRendererImp::fill_sample(float x, float y, const Color &color)
     float Cg_new = (1.0f - Ea) * Cg + Ea * Eg;
     float Cb_new = (1.0f - Ea) * Cb + Ea * Eb;
 
-    sample_buffer[4 * (sx + sy * sample_w)    ] = (uint8_t) (Cr_new / Ca_new * 255);
-    sample_buffer[4 * (sx + sy * sample_w) + 1] = (uint8_t) (Cg_new / Ca_new * 255);
-    sample_buffer[4 * (sx + sy * sample_w) + 2] = (uint8_t) (Cb_new / Ca_new * 255);
-    sample_buffer[4 * (sx + sy * sample_w) + 3] = (uint8_t) (Ca_new * 255);
-    
+    sample_buffer[4 * (sx + sy * sample_w)    ] = (uint8_t) (Cr_new);
+    sample_buffer[4 * (sx + sy * sample_w) + 1] = (uint8_t) (Cg_new);
+    sample_buffer[4 * (sx + sy * sample_w) + 2] = (uint8_t) (Cb_new);
+    sample_buffer[4 * (sx + sy * sample_w) + 3] = (uint8_t) (Ca_new);
   }
   
 }

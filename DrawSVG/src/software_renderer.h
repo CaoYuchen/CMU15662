@@ -134,8 +134,8 @@ class SoftwareRendererImp : public SoftwareRenderer {
   void resolve( void );
 
   std::vector<unsigned char> sample_buffer; int sample_w; int sample_h;
-  void fill_sample( int sx, int sy, const Color& c );
-  void fill_pixel( int x, int y, const Color& c );
+  void fill_sample( float sx, float sy, const Color& c );
+  // void fill_pixel( int x, int y, const Color& c );
 
 }; // class SoftwareRendererImp
 
