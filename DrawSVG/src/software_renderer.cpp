@@ -363,7 +363,6 @@ void SoftwareRendererImp::rasterize_triangle( float x0, float y0,
   // rasterize_line(x0, y0, x1, y1, color);
   // rasterize_line(x1, y1, x2, y2, color);
   // rasterize_line(x2, y2, x0, y0, color);
-
   x0 *= sample_rate;
   y0 *= sample_rate;
   x1 *= sample_rate;
@@ -373,8 +372,8 @@ void SoftwareRendererImp::rasterize_triangle( float x0, float y0,
 
   // The Barycentric Algorithm
   // fill the triangle
-  float xMin = floor(min(x0,min(x1,x2)))+0.5f;
-  float yMin = floor(min(y0,min(y1,y2)))+0.5f;
+  float xMin = floor(min(x0,min(x1,x2)));
+  float yMin = floor(min(y0,min(y1,y2)));
   float xHigh = ceil(max(x0,max(x1,x2)));
   float yHigh = ceil(max(y0,max(y1,y2)));
 
@@ -411,7 +410,7 @@ void SoftwareRendererImp::rasterize_image( float x0, float y0,
   Color c;
   for(float x = x0; x < x1; x++) {
     for(float y = y0; y < y1; y++) {
-      float u = (x - x0) / (y1 - y0);
+      float u = (x - x0) / (x1 - x0);
       float v = (y - y0) / (y1 - y0);
 
       // c = sampler->sample_nearest(tex, u, v, 0);
