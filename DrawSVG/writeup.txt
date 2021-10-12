@@ -21,19 +21,21 @@ Task 4:
 
 Task 5:
     This task is quite straight forward... And if we look at hardware_renderer in the same place, it's basically explaining everything.
-    Fully implemented.
+    Fully implemented. The biggest issue that I notice is the code draw a new SVG every time on top of the previous one, so we have to
+    clean the canvas every time before we draw a new one, which means to set every pixel to 255,255,255,255 (white).
 
 Task 6:
     
-    Fully implemented.
+    I think the biggest issue for this part is to think it clearly about whether it's coordinate in texel's uv[0,1] map or it's pixel's
+    [x0, y0] map, and because the pixel has half pixel rule, we need to -0.5f before turning into texel.
 
 Task 7:
-
-    Fully implemented.
+    This one is relatively straight forward as long as task 6 is correct, it's important to calculate the level of mipmap before using 
+    the trilinear interpolation.
 
 Task 8:
-    I think I implemented the correct math formula, but it seems my result doesn't really work. I think the problem is that
-    I don't know how to sort depth among multiple alpha color. But the svg doesn't have depth information....
+    At first, I didn't write correct draw_triangle in the beginning, the alpha part is always darker because my triangle makes step of 0.5f
+    each time. So it's important to understand the step meaning.
 
 Extra credit:
 
